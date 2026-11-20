@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'chat_screen.dart';
 
 class BusinessScreen extends StatefulWidget {
   final String token;
@@ -65,6 +66,17 @@ class _BusinessScreenState extends State<BusinessScreen> {
       appBar: AppBar(
         title: const Text('My Business'),
         actions: [
+          IconButton(
+  icon: const Icon(Icons.chat),
+  onPressed: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ChatScreen(token: widget.token),
+      ),
+    );
+  },
+),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () {
