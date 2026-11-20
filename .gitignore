@@ -1,3 +1,10 @@
+db.sqlite3
+__pycache__/
+*.pyc
+*.pyo
 venv/
-.env
-__pycashe__/
+env/
+mobile/.dart_tool/
+mobile/build/
+mobile/.idea/
+.DS_Store
