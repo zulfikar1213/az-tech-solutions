@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'services/auth_service.dart';
 import 'business_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -13,72 +14,69 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final usernameController = TextEditingController();
   final passwordController = TextEditingController();
-  bool isLoading = false;
-
-  @override
-  void dispose() {
-    usernameController.dispose();
-    passwordController.dispose();
-    super.dispose();
-  }
+  bool loading = false;
+  String error = '';
 
   Future<void> login() async {
     setState(() {
-      isLoading = true;
+      loading = true;
+      error = '';
     });
-    final response = await http.post(
-      Uri.parse('http://127.0.0.1:8000/api/token/'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'username': usernameController.text,
-        'password': passwordController.text,
-      }),
-    );
-    setState(() {
-      isLoading = false;
-    });
-    if (response.statusCode == 200) {
-  final data = jsonDecode(response.body);
-  final token = data['access'];
-  if (!mounted) return;
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => BusinessScreen(token: token),
-    ),
-  );
-} else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Wrong username or password')),
+    try {
+      final response = await http.post(
+        Uri.parse('http://127.0.0.1:8000/api/token/'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'username': usernameController.text.trim(),
+          'password': passwordController.text,
+        }),
       );
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        await AuthService.saveTokens(data['access'], data['refresh']);
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const BusinessScreen()),
+        );
+      } else {
+        setState(() {
+          error = 'Wrong username or password';
+          loading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        error = e.toString();
+        loading = false;
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Login'),
-      ),
+      appBar: AppBar(title: const Text('A.Z Tech Solutions')),
       body: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Column(
           children: [
             TextField(
               controller: usernameController,
               decoration: const InputDecoration(labelText: 'Username'),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             TextField(
               controller: passwordController,
               obscureText: true,
               decoration: const InputDecoration(labelText: 'Password'),
             ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: isLoading ? null : login,
-              child: Text(isLoading ? 'Loading...' : 'Login'),
-            ),
+            const SizedBox(height: 20),
+            if (error.isNotEmpty) Text(error, style: const TextStyle(color: Colors.red)),
+            const SizedBox(height: 10),
+            loading
+                ? const CircularProgressIndicator()
+                : ElevatedButton(onPressed: login, child: const Text('Login')),
           ],
         ),
       ),
